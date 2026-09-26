@@ -311,60 +311,6 @@ end
 # Tests Authn::UserManager
 # =============================================================================
 describe Authn::UserManager do
-  describe ".validate_user" do
-    it "retourne un tableau vide pour des données valides" do
-      errors = Authn::UserManager.validate_user(
-        email: TEST_EMAIL,
-        nom: TEST_NOM,
-        prenom: TEST_PRENOM,
-        role: "admin"
-      )
-      errors.should be_empty
-    end
-
-    it "signale un email vide" do
-      errors = Authn::UserManager.validate_user(
-        email: "", nom: TEST_NOM, prenom: TEST_PRENOM, role: "admin"
-      )
-      errors.any? { |e| e.includes?("courriel") }.should be_true
-    end
-
-    it "signale un email invalide" do
-      errors = Authn::UserManager.validate_user(
-        email: "invalide", nom: TEST_NOM, prenom: TEST_PRENOM, role: "admin"
-      )
-      errors.any? { |e| e.includes?("invalide") }.should be_true
-    end
-
-    it "signale un nom vide" do
-      errors = Authn::UserManager.validate_user(
-        email: TEST_EMAIL, nom: "", prenom: TEST_PRENOM, role: "admin"
-      )
-      errors.any? { |e| e.includes?("nom") }.should be_true
-    end
-
-    it "signale un prénom vide" do
-      errors = Authn::UserManager.validate_user(
-        email: TEST_EMAIL, nom: TEST_NOM, prenom: "", role: "admin"
-      )
-      errors.any? { |e| e.includes?("prénom") }.should be_true
-    end
-
-    it "signale un rôle invalide" do
-      errors = Authn::UserManager.validate_user(
-        email: TEST_EMAIL, nom: TEST_NOM, prenom: TEST_PRENOM, role: "superuser"
-      )
-      errors.any? { |e| e.includes?("rôle") }.should be_true
-    end
-
-    it "accepte le rôle gestionnaire" do
-      errors = Authn::UserManager.validate_user(
-        email: TEST_EMAIL, nom: TEST_NOM, prenom: TEST_PRENOM, role: "gestionnaire"
-      )
-      errors.should be_empty
-    end
-  end
-
   describe ".hash_password et .verify_password" do
     it "hache et vérifie correctement un mot de passe" do
       hash = Authn::UserManager.hash_password(TEST_PASSWORD)

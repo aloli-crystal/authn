@@ -173,9 +173,8 @@ result = Authn::PasswordReset.send_reset_email(
 
 [source,crystal]
 ----
-errors = Authn::UserManager.validate_user(
-  email: "new@example.com", nom: "Doe", prenom: "Jane", role: "admin"
-)
+# Validating a user's own fields — email, name, role — is your application's
+# business: it owns the wording, the languages and the list of roles.
 Authn::UserManager.send_invitation_email(
   email: "new@example.com", prenom: "Jane",
   invitation_url: "https://myapp.com/set-password",

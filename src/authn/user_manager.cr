@@ -8,8 +8,6 @@ module Authn
   # Fournit des utilitaires pour la création, la validation et l'invitation
   # des utilisateurs via courriel.
   module UserManager
-    VALID_ROLES = %w[admin gestionnaire]
-
     # Génère un mot de passe temporaire sécurisé.
     # La longueur correspond au nombre exact de caractères retournés.
     def self.generate_temp_password(length : Int32 = 16) : String
@@ -97,21 +95,6 @@ module Authn
       rescue ex : Exception
         PasswordReset::SendResult.new(success: false, error: ex.message)
       end
-    end
-
-    # Valide les champs d'un utilisateur. Retourne une liste d'erreurs.
-    #
-    # Ne valide plus le mot de passe : ces règles vivent dans
-    # `password-policy`, où elles suivent la recommandation CNIL en vigueur.
-    # Appeler `PasswordPolicy::Policy#validate` à côté de celle-ci.
-    def self.validate_user(email : String, nom : String, prenom : String, role : String) : Array(String)
-      errors = [] of String
-      errors << "L'adresse courriel est invalide." unless email.includes?("@") || email.empty?
-      errors << "L'adresse courriel est requise." if email.empty?
-      errors << "Le nom est requis." if nom.empty?
-      errors << "Le prénom est requis." if prenom.empty?
-      errors << "Le rôle est invalide." unless VALID_ROLES.includes?(role)
-      errors
     end
 
     # Vérifie un mot de passe contre son hash.

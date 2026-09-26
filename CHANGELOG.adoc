@@ -3,6 +3,27 @@
 :toc-title: Versions
 :toclevels: 2
 
+== v0.3.0 — 2026-09-26
+
+=== Removed
+
+* `UserManager.validate_user` and `UserManager::VALID_ROLES`.
+
+  v0.2.0 left the method in place while noting that its hardcoded French
+  sentences carried the very flaw the password rules had just been extracted
+  for. Keeping it was the one untenable state of the three: the method looked
+  available, a consumer was told not to call it, and the next reader would not
+  know why.
+
+  What it did was five trivial checks — one `includes?("@")` and four
+  `empty?` — plus a list of roles, `admin` and `gestionnaire`, belonging to the
+  application it grew up in rather than to any general need. None of that is
+  worth sharing from an authentication shard. An application owns its own
+  fields, its own wording, its own languages and its own roles.
+
+  What stays is what is genuinely general: BCrypt hashing, JWT tokens, HTTP
+  cookie sessions, invitations and password reset.
+
 == v0.2.0 — 2026-09-26
 
 === Renamed from kemal-auth

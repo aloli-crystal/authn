@@ -1,5 +1,5 @@
 name: authn
-version: 0.2.0
+version: 0.3.0
 description: |
   Authentication building blocks for Crystal, framework-agnostic: BCrypt
   password hashing, JWT tokens, HTTP cookie sessions, user invitations and
