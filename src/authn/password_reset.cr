@@ -41,39 +41,39 @@ module Authn
       expiry_minutes = (expiry.total_minutes).to_i
 
       body_text = <<-TEXT
-      Réinitialisation de votre mot de passe — #{app_name}
+        Réinitialisation de votre mot de passe — #{app_name}
 
-      Vous avez demandé la réinitialisation de votre mot de passe.
-      Cliquez sur le lien suivant pour définir un nouveau mot de passe :
+        Vous avez demandé la réinitialisation de votre mot de passe.
+        Cliquez sur le lien suivant pour définir un nouveau mot de passe :
 
-      #{link}
+        #{link}
 
-      Ce lien est valide pendant #{expiry_minutes} minutes.
+        Ce lien est valide pendant #{expiry_minutes} minutes.
 
-      Si vous n'avez pas fait cette demande, ignorez ce message.
+        Si vous n'avez pas fait cette demande, ignorez ce message.
 
-      — #{app_name}
-      TEXT
+        — #{app_name}
+        TEXT
 
       body_html = <<-HTML
-      <!DOCTYPE html>
-      <html lang="fr">
-      <head><meta charset="UTF-8"></head>
-      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-        <h2 style="color: #363636;">#{app_name}</h2>
-        <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
-        <p style="text-align: center; margin: 30px 0;">
-          <a href="#{link}" style="background-color: #363636; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-size: 16px;">
-            Réinitialiser mon mot de passe
-          </a>
-        </p>
-        <p style="color: #888; font-size: 13px;">Ce lien est valide pendant <strong>#{expiry_minutes} minutes</strong>.</p>
-        <p style="color: #888; font-size: 13px;">Si vous n'avez pas fait cette demande, ignorez ce message.</p>
-        <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0;">
-        <p style="color: #bdc3c7; font-size: 12px;">L'équipe #{app_name}</p>
-      </body>
-      </html>
-      HTML
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head><meta charset="UTF-8"></head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+          <h2 style="color: #363636;">#{app_name}</h2>
+          <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
+          <p style="text-align: center; margin: 30px 0;">
+            <a href="#{link}" style="background-color: #363636; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-size: 16px;">
+              Réinitialiser mon mot de passe
+            </a>
+          </p>
+          <p style="color: #888; font-size: 13px;">Ce lien est valide pendant <strong>#{expiry_minutes} minutes</strong>.</p>
+          <p style="color: #888; font-size: 13px;">Si vous n'avez pas fait cette demande, ignorez ce message.</p>
+          <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0;">
+          <p style="color: #bdc3c7; font-size: 12px;">L'équipe #{app_name}</p>
+        </body>
+        </html>
+        HTML
 
       begin
         helo = smtp.from_address.split("@").last? || "localhost"

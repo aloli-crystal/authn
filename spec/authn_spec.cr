@@ -61,13 +61,11 @@ describe Authn::Password do
     end
 
     it "expose les motifs de refus en valeurs, pas en phrases" do
-      begin
-        Authn::Password.hash("court", policy: PasswordPolicy::Policy.composed)
-        fail "aurait dû lever"
-      rescue ex : Authn::Password::PolicyError
-        ex.violations.should contain(PasswordPolicy::Violation::TooShort)
-        ex.violations.should contain(PasswordPolicy::Violation::MissingUppercase)
-      end
+      Authn::Password.hash("court", policy: PasswordPolicy::Policy.composed)
+      fail "aurait dû lever"
+    rescue ex : Authn::Password::PolicyError
+      ex.violations.should contain(PasswordPolicy::Violation::TooShort)
+      ex.violations.should contain(PasswordPolicy::Violation::MissingUppercase)
     end
 
     it "hache ce que la politique accepte" do

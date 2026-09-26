@@ -33,40 +33,40 @@ module Authn
       return PasswordReset::SendResult.new(success: false, error: "Configuration SMTP manquante.") if smtp.host.empty?
 
       body_text = <<-TEXT
-      Invitation — #{app_name}
+        Invitation — #{app_name}
 
-      Bonjour #{prenom},
+        Bonjour #{prenom},
 
-      Vous avez été invité(e) à rejoindre #{app_name}.
-      Cliquez sur le lien suivant pour activer votre compte et définir votre mot de passe :
+        Vous avez été invité(e) à rejoindre #{app_name}.
+        Cliquez sur le lien suivant pour activer votre compte et définir votre mot de passe :
 
-      #{invitation_url}
+        #{invitation_url}
 
-      Ce lien est valide pendant 24 heures.
+        Ce lien est valide pendant 24 heures.
 
-      — #{app_name}
-      TEXT
+        — #{app_name}
+        TEXT
 
       body_html = <<-HTML
-      <!DOCTYPE html>
-      <html lang="fr">
-      <head><meta charset="UTF-8"></head>
-      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-        <h2 style="color: #363636;">#{app_name}</h2>
-        <p>Bonjour <strong>#{prenom}</strong>,</p>
-        <p>Vous avez été invité(e) à rejoindre <strong>#{app_name}</strong>.</p>
-        <p>Cliquez sur le bouton ci-dessous pour activer votre compte :</p>
-        <p style="text-align: center; margin: 30px 0;">
-          <a href="#{invitation_url}" style="background-color: #363636; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-size: 16px;">
-            Activer mon compte
-          </a>
-        </p>
-        <p style="color: #888; font-size: 13px;">Ce lien est valide pendant <strong>24 heures</strong>.</p>
-        <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0;">
-        <p style="color: #bdc3c7; font-size: 12px;">L'équipe #{app_name}</p>
-      </body>
-      </html>
-      HTML
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head><meta charset="UTF-8"></head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+          <h2 style="color: #363636;">#{app_name}</h2>
+          <p>Bonjour <strong>#{prenom}</strong>,</p>
+          <p>Vous avez été invité(e) à rejoindre <strong>#{app_name}</strong>.</p>
+          <p>Cliquez sur le bouton ci-dessous pour activer votre compte :</p>
+          <p style="text-align: center; margin: 30px 0;">
+            <a href="#{invitation_url}" style="background-color: #363636; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-size: 16px;">
+              Activer mon compte
+            </a>
+          </p>
+          <p style="color: #888; font-size: 13px;">Ce lien est valide pendant <strong>24 heures</strong>.</p>
+          <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 20px 0;">
+          <p style="color: #bdc3c7; font-size: 12px;">L'équipe #{app_name}</p>
+        </body>
+        </html>
+        HTML
 
       begin
         helo = smtp.from_address.split("@").last? || "localhost"

@@ -50,7 +50,7 @@ module Authn
       p = Payload.new(sub: sub, email: email, role: role, exp: exp, iat: iat)
       raise InvalidTokenError.new("Le token a expiré") if p.expired?
       p
-    rescue ex : JWT::ExpiredSignatureError
+    rescue JWT::ExpiredSignatureError
       raise InvalidTokenError.new("Le token a expiré")
     rescue ex : JWT::DecodeError
       raise InvalidTokenError.new("Token invalide : #{ex.message}")
