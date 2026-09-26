@@ -5,8 +5,8 @@ Ajouter dans votre `shard.yml` :
 [source,yaml]
 ----
 dependencies:
-  kemal-auth:
-    github: aloli-crystal/kemal-auth
+  authn:
+    github: aloli-crystal/authn
     version: "~> 0.1"
 ----
 

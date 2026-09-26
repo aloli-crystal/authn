@@ -1,5 +1,5 @@
-name: kemal-auth
-title: 'Kemal Auth'
+name: authn
+title: 'Authn'
 version: '0.1.0'
 nav:
   - modules/ROOT/nav.adoc

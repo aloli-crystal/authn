@@ -9,7 +9,7 @@ deps:
 
 # Lance la suite de tests
 spec:
-	crystal spec spec/spec_helper.cr spec/kemal_auth.cr
+	crystal spec
 
 # Alias de spec
 test: spec

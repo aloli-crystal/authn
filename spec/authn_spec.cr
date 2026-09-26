@@ -1,125 +1,140 @@
 require "./spec_helper"
 
 # =============================================================================
-# Tests KemalAuth::Password
+# Tests Authn::Password
 # =============================================================================
-describe KemalAuth::Password do
+describe Authn::Password do
   describe ".hash" do
     it "hache un mot de passe valide" do
-      hash = KemalAuth::Password.hash(TEST_PASSWORD)
+      hash = Authn::Password.hash(TEST_PASSWORD)
       hash.should_not be_empty
       hash.should start_with("$2")
     end
 
     it "produit des hashes différents pour le même mot de passe" do
-      hash1 = KemalAuth::Password.hash(TEST_PASSWORD)
-      hash2 = KemalAuth::Password.hash(TEST_PASSWORD)
+      hash1 = Authn::Password.hash(TEST_PASSWORD)
+      hash2 = Authn::Password.hash(TEST_PASSWORD)
       hash1.should_not eq(hash2)
     end
 
     it "lève une erreur si le mot de passe est vide" do
-      expect_raises(ArgumentError, "vide") do
-        KemalAuth::Password.hash("")
+      expect_raises(ArgumentError, /must not be empty/) do
+        Authn::Password.hash("")
       end
-    end
-
-    it "lève une erreur si le mot de passe est trop court" do
-      expect_raises(ArgumentError, "12 caractères") do
-        KemalAuth::Password.hash("abc")
-      end
-    end
-  end
-
-  describe ".verify" do
-    it "retourne true pour un mot de passe correct" do
-      hash = KemalAuth::Password.hash(TEST_PASSWORD)
-      KemalAuth::Password.verify(TEST_PASSWORD, hash).should be_true
     end
 
     it "retourne false pour un mot de passe incorrect" do
-      hash = KemalAuth::Password.hash(TEST_PASSWORD)
-      KemalAuth::Password.verify("MauvaisMotDePasse1", hash).should be_false
+      hash = Authn::Password.hash(TEST_PASSWORD)
+      Authn::Password.verify("MauvaisMotDePasse1", hash).should be_false
     end
 
     it "retourne false si le mot de passe est vide" do
-      hash = KemalAuth::Password.hash(TEST_PASSWORD)
-      KemalAuth::Password.verify("", hash).should be_false
+      hash = Authn::Password.hash(TEST_PASSWORD)
+      Authn::Password.verify("", hash).should be_false
     end
 
     it "retourne false si le hash est vide" do
-      KemalAuth::Password.verify(TEST_PASSWORD, "").should be_false
+      Authn::Password.verify(TEST_PASSWORD, "").should be_false
     end
 
     it "retourne false pour un hash malformé" do
-      KemalAuth::Password.verify(TEST_PASSWORD, "hash_invalide").should be_false
+      Authn::Password.verify(TEST_PASSWORD, "hash_invalide").should be_false
     end
   end
 
-  describe ".validate" do
-    it "retourne un tableau vide pour un mot de passe valide" do
-      KemalAuth::Password.validate(TEST_PASSWORD).should be_empty
+  # Les règles de mot de passe ont quitté ce shard pour `password-policy`,
+  # parce qu'elles sont une question de politique : elles changent avec le
+  # régulateur — la CNIL a remplacé ses règles de composition de 2017 par des
+  # paliers d'entropie en 2022 — et les garder ici imposait à chaque
+  # consommateur une formulation française figée.
+  describe "politique de mot de passe" do
+    it "n'applique aucune politique par défaut" do
+      # Court, sans majuscule ni chiffre : accepté, car vérifier le mot de
+      # passe est l'affaire de l'appelant.
+      Authn::Password.hash("court").should start_with("$2")
     end
 
-    it "signale un mot de passe vide" do
-      errors = KemalAuth::Password.validate("")
-      errors.should_not be_empty
+    it "applique la politique qu'on lui passe" do
+      expect_raises(Authn::Password::PolicyError, /too_short|TooShort/i) do
+        Authn::Password.hash("court", policy: PasswordPolicy::Policy.long)
+      end
     end
 
-    it "signale un mot de passe trop court" do
-      errors = KemalAuth::Password.validate("Ab1")
-      errors.any? { |e| e.includes?("12 caractères") }.should be_true
+    it "expose les motifs de refus en valeurs, pas en phrases" do
+      begin
+        Authn::Password.hash("court", policy: PasswordPolicy::Policy.composed)
+        fail "aurait dû lever"
+      rescue ex : Authn::Password::PolicyError
+        ex.violations.should contain(PasswordPolicy::Violation::TooShort)
+        ex.violations.should contain(PasswordPolicy::Violation::MissingUppercase)
+      end
     end
 
-    it "signale l'absence de majuscule" do
-      errors = KemalAuth::Password.validate("motdepasse1")
-      errors.any? { |e| e.includes?("majuscule") }.should be_true
-    end
-
-    it "signale l'absence de chiffre" do
-      errors = KemalAuth::Password.validate("MotDePasseSansChiffre")
-      errors.any? { |e| e.includes?("chiffre") }.should be_true
+    it "hache ce que la politique accepte" do
+      Authn::Password.hash("Comptabilite12", policy: PasswordPolicy::Policy.long)
+        .should start_with("$2")
     end
   end
 
-  describe ".valid?" do
-    it "retourne true pour un mot de passe valide" do
-      KemalAuth::Password.valid?(TEST_PASSWORD).should be_true
+  # BCrypt tronque au-delà de 72 octets. Tronquer est pire qu'échouer : le mot
+  # de passe a l'air de fonctionner alors qu'une partie est ignorée.
+  describe "limite de BCrypt" do
+    it "refuse au-delà de la limite" do
+      expect_raises(ArgumentError, /BCrypt accepts at most 71/) do
+        Authn::Password.hash("A1!" + "a" * 100)
+      end
     end
 
-    it "retourne false pour un mot de passe invalide" do
-      KemalAuth::Password.valid?("court").should be_false
+    it "compte des octets, pas des caractères" do
+      accente = "Éé" * 20 # 40 caractères, 80 octets
+      accente.size.should eq(40)
+      accente.bytesize.should eq(80)
+
+      expect_raises(ArgumentError, /80 bytes/) do
+        Authn::Password.hash(accente)
+      end
+    end
+
+    # 71 et non 72 : Crystal ajoute un octet NUL (`password.bytesize + 1`) et
+    # rejette au-delà de 72, si bien que 72 octets de mot de passe en font 73.
+    it "accepte tout juste 71 octets, et refuse 72" do
+      Authn::Password.hash("a" * 71).should start_with("$2")
+
+      expect_raises(ArgumentError, /72 bytes; BCrypt accepts at most 71/) do
+        Authn::Password.hash("a" * 72)
+      end
     end
   end
 end
 
 # =============================================================================
-# Tests KemalAuth::Token
+# Tests Authn::Token
 # =============================================================================
-describe KemalAuth::Token do
+describe Authn::Token do
   describe ".generate" do
     it "génère un token JWT non vide" do
-      token = KemalAuth::Token.generate(secret: SECRET_KEY, sub: "1", email: TEST_EMAIL)
+      token = Authn::Token.generate(secret: SECRET_KEY, sub: "1", email: TEST_EMAIL)
       token.should_not be_empty
       token.split(".").size.should eq(3)
     end
 
     it "lève une erreur si la clé secrète est vide" do
       expect_raises(ArgumentError, "secrète") do
-        KemalAuth::Token.generate(secret: "", sub: "1", email: TEST_EMAIL)
+        Authn::Token.generate(secret: "", sub: "1", email: TEST_EMAIL)
       end
     end
 
     it "lève une erreur si le sujet est vide" do
       expect_raises(ArgumentError, "sub") do
-        KemalAuth::Token.generate(secret: SECRET_KEY, sub: "", email: TEST_EMAIL)
+        Authn::Token.generate(secret: SECRET_KEY, sub: "", email: TEST_EMAIL)
       end
     end
   end
 
   describe ".decode" do
     it "décode un token valide" do
-      token = KemalAuth::Token.generate(secret: SECRET_KEY, sub: "42", email: TEST_EMAIL, role: "admin")
-      payload = KemalAuth::Token.decode(token, SECRET_KEY)
+      token = Authn::Token.generate(secret: SECRET_KEY, sub: "42", email: TEST_EMAIL, role: "admin")
+      payload = Authn::Token.decode(token, SECRET_KEY)
       payload.sub.should eq("42")
       payload.email.should eq(TEST_EMAIL)
       payload.role.should eq("admin")
@@ -127,43 +142,43 @@ describe KemalAuth::Token do
     end
 
     it "lève InvalidTokenError pour un token vide" do
-      expect_raises(KemalAuth::Token::InvalidTokenError, "vide") do
-        KemalAuth::Token.decode("", SECRET_KEY)
+      expect_raises(Authn::Token::InvalidTokenError, "vide") do
+        Authn::Token.decode("", SECRET_KEY)
       end
     end
 
     it "lève InvalidTokenError pour une mauvaise clé secrète" do
-      token = KemalAuth::Token.generate(secret: SECRET_KEY, sub: "1", email: TEST_EMAIL)
-      expect_raises(KemalAuth::Token::InvalidTokenError) do
-        KemalAuth::Token.decode(token, "mauvaise_cle_secrete_suffisamment_longue")
+      token = Authn::Token.generate(secret: SECRET_KEY, sub: "1", email: TEST_EMAIL)
+      expect_raises(Authn::Token::InvalidTokenError) do
+        Authn::Token.decode(token, "mauvaise_cle_secrete_suffisamment_longue")
       end
     end
 
     it "lève InvalidTokenError pour un token malformé" do
-      expect_raises(KemalAuth::Token::InvalidTokenError) do
-        KemalAuth::Token.decode("token.invalide.ici", SECRET_KEY)
+      expect_raises(Authn::Token::InvalidTokenError) do
+        Authn::Token.decode("token.invalide.ici", SECRET_KEY)
       end
     end
   end
 
   describe ".valid?" do
     it "retourne true pour un token valide" do
-      token = KemalAuth::Token.generate(secret: SECRET_KEY, sub: "1", email: TEST_EMAIL)
-      KemalAuth::Token.valid?(token, SECRET_KEY).should be_true
+      token = Authn::Token.generate(secret: SECRET_KEY, sub: "1", email: TEST_EMAIL)
+      Authn::Token.valid?(token, SECRET_KEY).should be_true
     end
 
     it "retourne false pour un token invalide" do
-      KemalAuth::Token.valid?("token_invalide", SECRET_KEY).should be_false
+      Authn::Token.valid?("token_invalide", SECRET_KEY).should be_false
     end
 
     it "retourne false pour un token vide" do
-      KemalAuth::Token.valid?("", SECRET_KEY).should be_false
+      Authn::Token.valid?("", SECRET_KEY).should be_false
     end
   end
 
   describe ".generate_reservation_token" do
     it "génère un token de réservation valide" do
-      token = KemalAuth::Token.generate_reservation_token(
+      token = Authn::Token.generate_reservation_token(
         secret: SECRET_KEY,
         reservation_token: "abc123def456"
       )
@@ -173,19 +188,19 @@ describe KemalAuth::Token do
 
     it "lève une erreur si la clé secrète est vide" do
       expect_raises(ArgumentError) do
-        KemalAuth::Token.generate_reservation_token(secret: "", reservation_token: "abc123")
+        Authn::Token.generate_reservation_token(secret: "", reservation_token: "abc123")
       end
     end
   end
 end
 
 # =============================================================================
-# Tests KemalAuth::SmtpConfig
+# Tests Authn::SmtpConfig
 # =============================================================================
-describe KemalAuth::SmtpConfig do
+describe Authn::SmtpConfig do
   describe ".new" do
     it "crée une configuration avec les valeurs fournies" do
-      config = KemalAuth::SmtpConfig.new(
+      config = Authn::SmtpConfig.new(
         host: "smtp.example.com",
         port: 587,
         username: "user@example.com",
@@ -201,7 +216,7 @@ describe KemalAuth::SmtpConfig do
 
   describe ".from_hash" do
     it "crée une configuration depuis un Hash" do
-      config = KemalAuth::SmtpConfig.from_hash({
+      config = Authn::SmtpConfig.from_hash({
         "smtp_host"         => "smtp.test.com",
         "smtp_port"         => "465",
         "smtp_from_address" => "test@test.com",
@@ -214,7 +229,7 @@ describe KemalAuth::SmtpConfig do
 
   describe ".validate" do
     it "retourne un tableau vide pour une configuration valide" do
-      config = KemalAuth::SmtpConfig.new(
+      config = Authn::SmtpConfig.new(
         host: "smtp.example.com",
         port: 587,
         from_address: "noreply@example.com"
@@ -223,82 +238,82 @@ describe KemalAuth::SmtpConfig do
     end
 
     it "signale un hôte vide" do
-      config = KemalAuth::SmtpConfig.new(host: "", port: 587, from_address: "test@test.com")
+      config = Authn::SmtpConfig.new(host: "", port: 587, from_address: "test@test.com")
       config.validate.any? { |e| e.includes?("hôte") }.should be_true
     end
 
     it "signale un port invalide" do
-      config = KemalAuth::SmtpConfig.new(host: "smtp.test.com", port: 0, from_address: "test@test.com")
+      config = Authn::SmtpConfig.new(host: "smtp.test.com", port: 0, from_address: "test@test.com")
       config.validate.any? { |e| e.includes?("port") }.should be_true
     end
 
     it "signale une adresse d'expédition invalide" do
-      config = KemalAuth::SmtpConfig.new(host: "smtp.test.com", port: 587, from_address: "invalide")
+      config = Authn::SmtpConfig.new(host: "smtp.test.com", port: 587, from_address: "invalide")
       config.validate.any? { |e| e.includes?("invalide") }.should be_true
     end
   end
 end
 
 # =============================================================================
-# Tests KemalAuth::PasswordReset
+# Tests Authn::PasswordReset
 # =============================================================================
-describe KemalAuth::PasswordReset do
+describe Authn::PasswordReset do
   describe ".generate_token" do
     it "génère un token de réinitialisation valide" do
-      token = KemalAuth::PasswordReset.generate_token(TEST_EMAIL, SECRET_KEY)
+      token = Authn::PasswordReset.generate_token(TEST_EMAIL, SECRET_KEY)
       token.should_not be_empty
       token.split(".").size.should eq(3)
     end
 
     it "lève une erreur si l'email est vide" do
       expect_raises(ArgumentError, "courriel") do
-        KemalAuth::PasswordReset.generate_token("", SECRET_KEY)
+        Authn::PasswordReset.generate_token("", SECRET_KEY)
       end
     end
 
     it "lève une erreur si la clé secrète est vide" do
       expect_raises(ArgumentError, "secrète") do
-        KemalAuth::PasswordReset.generate_token(TEST_EMAIL, "")
+        Authn::PasswordReset.generate_token(TEST_EMAIL, "")
       end
     end
   end
 
   describe ".verify_token" do
     it "retourne l'email pour un token valide" do
-      token = KemalAuth::PasswordReset.generate_token(TEST_EMAIL, SECRET_KEY)
-      email = KemalAuth::PasswordReset.verify_token(token, SECRET_KEY)
+      token = Authn::PasswordReset.generate_token(TEST_EMAIL, SECRET_KEY)
+      email = Authn::PasswordReset.verify_token(token, SECRET_KEY)
       email.should eq(TEST_EMAIL)
     end
 
     it "lève InvalidTokenError pour un token vide" do
-      expect_raises(KemalAuth::Token::InvalidTokenError, "vide") do
-        KemalAuth::PasswordReset.verify_token("", SECRET_KEY)
+      expect_raises(Authn::Token::InvalidTokenError, "vide") do
+        Authn::PasswordReset.verify_token("", SECRET_KEY)
       end
     end
 
     it "lève InvalidTokenError pour une mauvaise clé" do
-      token = KemalAuth::PasswordReset.generate_token(TEST_EMAIL, SECRET_KEY)
-      expect_raises(KemalAuth::Token::InvalidTokenError) do
-        KemalAuth::PasswordReset.verify_token(token, "mauvaise_cle_suffisamment_longue_ici")
+      token = Authn::PasswordReset.generate_token(TEST_EMAIL, SECRET_KEY)
+      expect_raises(Authn::Token::InvalidTokenError) do
+        Authn::PasswordReset.verify_token(token, "mauvaise_cle_suffisamment_longue_ici")
       end
     end
 
     it "lève InvalidTokenError pour un token JWT standard (mauvais type)" do
-      token = KemalAuth::Token.generate(secret: SECRET_KEY, sub: "1", email: TEST_EMAIL)
-      expect_raises(KemalAuth::Token::InvalidTokenError, "Type de token invalide") do
-        KemalAuth::PasswordReset.verify_token(token, SECRET_KEY)
+      token = Authn::Token.generate(secret: SECRET_KEY, sub: "1", email: TEST_EMAIL)
+      expect_raises(Authn::Token::InvalidTokenError, "Type de token invalide") do
+        Authn::PasswordReset.verify_token(token, SECRET_KEY)
       end
     end
   end
 end
 
 # =============================================================================
-# Tests KemalAuth::UserManager
+# Tests Authn::UserManager
 # =============================================================================
-describe KemalAuth::UserManager do
+describe Authn::UserManager do
   describe ".validate_user" do
     it "retourne un tableau vide pour des données valides" do
-      errors = KemalAuth::UserManager.validate_user(
+      errors = Authn::UserManager.validate_user(
         email: TEST_EMAIL,
         nom: TEST_NOM,
         prenom: TEST_PRENOM,
@@ -308,73 +323,65 @@ describe KemalAuth::UserManager do
     end
 
     it "signale un email vide" do
-      errors = KemalAuth::UserManager.validate_user(
+      errors = Authn::UserManager.validate_user(
         email: "", nom: TEST_NOM, prenom: TEST_PRENOM, role: "admin"
       )
       errors.any? { |e| e.includes?("courriel") }.should be_true
     end
 
     it "signale un email invalide" do
-      errors = KemalAuth::UserManager.validate_user(
+      errors = Authn::UserManager.validate_user(
         email: "invalide", nom: TEST_NOM, prenom: TEST_PRENOM, role: "admin"
       )
       errors.any? { |e| e.includes?("invalide") }.should be_true
     end
 
     it "signale un nom vide" do
-      errors = KemalAuth::UserManager.validate_user(
+      errors = Authn::UserManager.validate_user(
         email: TEST_EMAIL, nom: "", prenom: TEST_PRENOM, role: "admin"
       )
       errors.any? { |e| e.includes?("nom") }.should be_true
     end
 
     it "signale un prénom vide" do
-      errors = KemalAuth::UserManager.validate_user(
+      errors = Authn::UserManager.validate_user(
         email: TEST_EMAIL, nom: TEST_NOM, prenom: "", role: "admin"
       )
       errors.any? { |e| e.includes?("prénom") }.should be_true
     end
 
     it "signale un rôle invalide" do
-      errors = KemalAuth::UserManager.validate_user(
+      errors = Authn::UserManager.validate_user(
         email: TEST_EMAIL, nom: TEST_NOM, prenom: TEST_PRENOM, role: "superuser"
       )
       errors.any? { |e| e.includes?("rôle") }.should be_true
     end
 
     it "accepte le rôle gestionnaire" do
-      errors = KemalAuth::UserManager.validate_user(
+      errors = Authn::UserManager.validate_user(
         email: TEST_EMAIL, nom: TEST_NOM, prenom: TEST_PRENOM, role: "gestionnaire"
       )
       errors.should be_empty
-    end
-
-    it "valide aussi le mot de passe si fourni" do
-      errors = KemalAuth::UserManager.validate_user(
-        email: TEST_EMAIL, nom: TEST_NOM, prenom: TEST_PRENOM,
-        role: "admin", password: "faible"
-      )
-      errors.should_not be_empty
     end
   end
 
   describe ".hash_password et .verify_password" do
     it "hache et vérifie correctement un mot de passe" do
-      hash = KemalAuth::UserManager.hash_password(TEST_PASSWORD)
-      KemalAuth::UserManager.verify_password(TEST_PASSWORD, hash).should be_true
-      KemalAuth::UserManager.verify_password("MauvaisMotDePasse1", hash).should be_false
+      hash = Authn::UserManager.hash_password(TEST_PASSWORD)
+      Authn::UserManager.verify_password(TEST_PASSWORD, hash).should be_true
+      Authn::UserManager.verify_password("MauvaisMotDePasse1", hash).should be_false
     end
   end
 
   describe ".generate_temp_password" do
     it "génère un mot de passe de la longueur demandée" do
-      pwd = KemalAuth::UserManager.generate_temp_password(12)
+      pwd = Authn::UserManager.generate_temp_password(12)
       pwd.size.should eq(12)
     end
 
     it "génère des mots de passe différents à chaque appel" do
-      pwd1 = KemalAuth::UserManager.generate_temp_password
-      pwd2 = KemalAuth::UserManager.generate_temp_password
+      pwd1 = Authn::UserManager.generate_temp_password
+      pwd2 = Authn::UserManager.generate_temp_password
       pwd1.should_not eq(pwd2)
     end
   end

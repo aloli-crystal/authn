@@ -1,5 +1,5 @@
 require "spec"
-require "../src/kemal_auth"
+require "../src/authn"
 
 # Constantes partagées entre les tests
 SECRET_KEY    = "cle_secrete_de_test_suffisamment_longue_32chars"

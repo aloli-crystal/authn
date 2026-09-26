@@ -4,12 +4,12 @@
 
 [source,crystal]
 ----
-require "kemal_auth"
+require "authn"
 
-hash = KemalAuth::Password.hash("MonMotDePasse1!")
-KemalAuth::Password.verify("MonMotDePasse1!", hash) # => true
+hash = Authn::Password.hash("MonMotDePasse1!")
+Authn::Password.verify("MonMotDePasse1!", hash) # => true
 
-errors = KemalAuth::Password.validate("faible")
+errors = Authn::Password.validate("faible")
 # => ["Le mot de passe doit contenir au moins 12 caracteres.", ...]
 ----
 
@@ -17,13 +17,13 @@ errors = KemalAuth::Password.validate("faible")
 
 [source,crystal]
 ----
-token = KemalAuth::Token.generate(
+token = Authn::Token.generate(
   secret: ENV["SESSION_SECRET"],
   sub: "1",
   email: "user@example.com",
   role: "admin"
 )
-payload = KemalAuth::Token.decode(token, ENV["SESSION_SECRET"])
+payload = Authn::Token.decode(token, ENV["SESSION_SECRET"])
 ----
 
 == Configuration SMTP
@@ -32,7 +32,7 @@ payload = KemalAuth::Token.decode(token, ENV["SESSION_SECRET"])
 
 [source,crystal]
 ----
-smtp = KemalAuth::SmtpConfig.new(
+smtp = Authn::SmtpConfig.new(
   host: "smtp.example.com",
   port: 587,
   username: "user@example.com",
@@ -63,8 +63,8 @@ smtp = KemalAuth::SmtpConfig.new(
 
 [source,crystal]
 ----
-smtp = KemalAuth::SmtpConfig.new(host: "smtp.example.com", ...)
-result = KemalAuth::PasswordReset.send_reset_email(
+smtp = Authn::SmtpConfig.new(host: "smtp.example.com", ...)
+result = Authn::PasswordReset.send_reset_email(
   email: "user@example.com",
   reset_url: "https://monapplication.fr/reset-password",
   secret: ENV["SESSION_SECRET"],
@@ -76,13 +76,13 @@ result = KemalAuth::PasswordReset.send_reset_email(
 
 [source,crystal]
 ----
-errors = KemalAuth::UserManager.validate_user(
+errors = Authn::UserManager.validate_user(
   email: "nouveau@example.com", nom: "Dupont", prenom: "Marie", role: "admin"
 )
-KemalAuth::UserManager.send_invitation_email(
+Authn::UserManager.send_invitation_email(
   email: "nouveau@example.com", prenom: "Marie",
   invitation_url: "https://monapplication.fr/set-password",
   secret: ENV["SESSION_SECRET"], smtp: smtp
 )
-temp_pwd = KemalAuth::UserManager.generate_temp_password
+temp_pwd = Authn::UserManager.generate_temp_password
 ----

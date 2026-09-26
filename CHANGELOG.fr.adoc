@@ -3,6 +3,65 @@
 :toc-title: Versions
 :toclevels: 2
 
+== v0.2.0 — 2026-09-26
+
+=== Renommé depuis kemal-auth
+
+Le nom était faux, et il était la seule chose qui liait ce shard à Kemal. Rien
+dedans n'a jamais dépendu du framework : `shard.yml` ne l'a jamais déclaré, et
+`Session` échange des `HTTP::Cookie` de la bibliothèque standard, pas le
+contexte de requête d'un framework. Le mot « Kemal » apparaissait dans trois
+commentaires, dont deux dans du code d'exemple commenté. Le nom dissuadait
+simplement d'y recourir depuis une application Marten ou Lucky.
+
+* Shard `kemal-auth` → `authn`, module `KemalAuth` → `Authn`.
+* `src/kemal_auth/` → `src/authn/`, `spec/kemal_auth_spec.cr` → `spec/authn_spec.cr`.
+* Les dépendants doivent mettre à jour la clé de dépendance, l'URL et la
+  contrainte de version, et remplacer `KemalAuth::` par `Authn::` dans leur
+  propre code.
+
+=== Retiré
+
+* `Password.validate`, `Password.valid?` et `Password::MIN_LENGTH` — les règles
+  partent dans `aloli-crystal/password-policy`. C'est une question de
+  politique : elles changent avec le régulateur, et celles-ci appliquaient la
+  recommandation CNIL de 2017, remplacée en 2022 par des paliers d'entropie.
+  Les garder ici imposait de plus une formulation française figée à chaque
+  consommateur.
+* `UserManager.validate_user` perd son paramètre `password`, pour la même
+  raison. Valider le mot de passe avec `PasswordPolicy::Policy#validate` à
+  côté.
+
+=== Ajouté
+
+* `Password.hash` accepte `policy:`, applique une `PasswordPolicy::Policy` et
+  lève `Password::PolicyError`, qui porte les motifs sous forme de valeurs.
+* `Password::MAX_BYTESIZE` — le plus long mot de passe que BCrypt accepte, en
+  octets.
+
+=== Corrigé
+
+* `Password.hash` ne laisse plus passer un mot de passe au-delà de ce que
+  BCrypt accepte. La limite est de *71 octets*, et non les 72 habituellement
+  cités : le `Crypto::Bcrypt` de Crystal ajoute un octet NUL et rejette au-delà
+  de 72, si bien que 72 octets en font 73. Des octets, pas des caractères — une
+  phrase de passe accentuée de 40 caractères en fait 80.
+* Le Makefile lançait un chemin de spec disparu lors du renommage du fichier en
+  0.1.1.
+* La CI invoquait `bin/ameba`, un binaire qu'ameba 1.7 ne construit plus.
+
+=== Reste connu
+
+* `UserManager.validate_user` renvoie encore des phrases françaises codées en
+  dur. Il porte le défaut pour lequel les règles de mot de passe ont été
+  extraites ; le corriger suppose une rupture supplémentaire, remise à une
+  version ultérieure.
+
+== v0.1.2 — 2026-04-29
+
+* `VERSION` est lue depuis `shard.yml` au compile-time : la constante ne peut
+  plus se désynchroniser de la version déclarée du shard.
+
 == v0.1.1 — 2026-04-22
 
 * Ajout du linter *ameba* à la CI avec configuration `.ameba.yml` partagée alignée sur l'écosystème Crystal.

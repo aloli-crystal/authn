@@ -1,10 +1,10 @@
-module KemalAuth
+module Authn
   # Configuration du serveur SMTP pour l'envoi de courriels.
   # Toutes les valeurs sont paramétrables à l'instanciation ou
   # via les variables d'environnement correspondantes.
   #
   # ```
-  # config = KemalAuth::SmtpConfig.new(
+  # config = Authn::SmtpConfig.new(
   #   host: "smtp.example.com",
   #   port: 587,
   #   username: "user@example.com",
@@ -39,7 +39,7 @@ module KemalAuth
     # Utile pour charger la configuration depuis une base de données.
     #
     # ```
-    # config = KemalAuth::SmtpConfig.from_hash({
+    # config = Authn::SmtpConfig.from_hash({
     #   "smtp_host"     => "smtp.example.com",
     #   "smtp_port"     => "587",
     #   "smtp_username" => "user@example.com",

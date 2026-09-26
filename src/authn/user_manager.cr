@@ -3,7 +3,7 @@ require "./password"
 require "./password_reset"
 require "./smtp_config"
 
-module KemalAuth
+module Authn
   # Module de gestion des utilisateurs administrateurs.
   # Fournit des utilitaires pour la création, la validation et l'invitation
   # des utilisateurs via courriel.
@@ -17,7 +17,7 @@ module KemalAuth
       Array.new(length) { chars.sample(Random::Secure) }.join
     end
 
-    # Hache un mot de passe via KemalAuth::Password.
+    # Hache un mot de passe via Authn::Password.
     def self.hash_password(password : String) : String
       Password.hash(password)
     end
@@ -100,14 +100,17 @@ module KemalAuth
     end
 
     # Valide les champs d'un utilisateur. Retourne une liste d'erreurs.
-    def self.validate_user(email : String, nom : String, prenom : String, role : String, password : String = "") : Array(String)
+    #
+    # Ne valide plus le mot de passe : ces règles vivent dans
+    # `password-policy`, où elles suivent la recommandation CNIL en vigueur.
+    # Appeler `PasswordPolicy::Policy#validate` à côté de celle-ci.
+    def self.validate_user(email : String, nom : String, prenom : String, role : String) : Array(String)
       errors = [] of String
       errors << "L'adresse courriel est invalide." unless email.includes?("@") || email.empty?
       errors << "L'adresse courriel est requise." if email.empty?
       errors << "Le nom est requis." if nom.empty?
       errors << "Le prénom est requis." if prenom.empty?
       errors << "Le rôle est invalide." unless VALID_ROLES.includes?(role)
-      errors.concat(Password.validate(password)) unless password.empty?
       errors
     end
 

@@ -1,8 +1,10 @@
 require "./token"
 
-module KemalAuth
+module Authn
   # Gestion des sessions d'authentification via cookies HTTP.
-  # Conçu pour fonctionner avec le framework Kemal.
+  # Ne dépend d'aucun framework : `create_cookie` rend un `HTTP::Cookie` de la
+  # bibliothèque standard, que l'appelant attache à sa réponse comme il
+  # l'entend. C'est ce qui rendait l'ancien nom `kemal-auth` trompeur.
   module Session
     COOKIE_HTTPONLY = true
     COOKIE_NAME     = "aloli_auth_token"
@@ -22,7 +24,7 @@ module KemalAuth
     # Vérifie si la session est authentifiée (version simplifiée).
     #
     # ```
-    # KemalAuth::Session.authenticated?(cookies, secret: "ma_cle_secrete")
+    # Authn::Session.authenticated?(cookies, secret: "ma_cle_secrete")
     # ```
     def self.authenticated?(cookies : HTTP::Cookies, secret : String) : Bool
       verify(cookies, secret).authenticated?
@@ -32,7 +34,7 @@ module KemalAuth
     # Retourne un objet HTTP::Cookie prêt à être ajouté à la réponse.
     #
     # ```
-    # cookie = KemalAuth::Session.create_cookie(token, expiry_hours: 8)
+    # cookie = Authn::Session.create_cookie(token, expiry_hours: 8)
     # env.response.cookies << cookie
     # ```
     def self.create_cookie(
@@ -54,7 +56,7 @@ module KemalAuth
     # Crée un cookie de déconnexion (valeur vide, expiration passée).
     #
     # ```
-    # env.response.cookies << KemalAuth::Session.logout_cookie
+    # env.response.cookies << Authn::Session.logout_cookie
     # ```
     def self.logout_cookie : HTTP::Cookie
       HTTP::Cookie.new(
@@ -71,7 +73,7 @@ module KemalAuth
     # Retourne un `SessionInfo` avec le résultat de la vérification.
     #
     # ```
-    # info = KemalAuth::Session.verify(cookies, secret: "ma_cle_secrete")
+    # info = Authn::Session.verify(cookies, secret: "ma_cle_secrete")
     # if info.authenticated?
     #   puts info.payload.not_nil!.email
     # end

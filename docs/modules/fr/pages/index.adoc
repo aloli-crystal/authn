@@ -1,6 +1,7 @@
-= Kemal Auth
+= Authn
 
-Bibliotheque d'authentification pour les applications web https://kemalcr.com/[Kemal] en Crystal.
+Briques d'authentification pour Crystal, liees a aucun framework web.
+Anciennement `kemal-auth`.
 
 == Modules
 
@@ -8,22 +9,22 @@ Bibliotheque d'authentification pour les applications web https://kemalcr.com/[K
 |===
 | Module | Description
 
-| `KemalAuth::Password`
+| `Authn::Password`
 | Hachage et validation BCrypt des mots de passe avec regles conformes CNIL (12+ caracteres, majuscule, minuscule, chiffre, caractere special)
 
-| `KemalAuth::Token`
+| `Authn::Token`
 | Generation et verification de tokens JWT
 
-| `KemalAuth::Session`
-| Gestion des sessions via cookies HTTP (Kemal)
+| `Authn::Session`
+| Gestion des sessions via cookies HTTP, independante du framework
 
-| `KemalAuth::SmtpConfig`
+| `Authn::SmtpConfig`
 | Configuration du serveur SMTP
 
-| `KemalAuth::PasswordReset`
+| `Authn::PasswordReset`
 | Recuperation de mot de passe par courriel
 
-| `KemalAuth::UserManager`
+| `Authn::UserManager`
 | Gestion des utilisateurs et invitations
 |===
 

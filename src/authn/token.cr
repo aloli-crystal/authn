@@ -1,7 +1,7 @@
 require "jwt"
 require "json"
 
-module KemalAuth
+module Authn
   # Gestion des tokens JWT pour l'authentification sans état.
   # Génère, vérifie et décode les tokens d'accès et de session.
   module Token
@@ -31,7 +31,7 @@ module KemalAuth
     # Lève `InvalidTokenError` si le token est invalide, expiré ou mal formé.
     #
     # ```
-    # payload = KemalAuth::Token.decode(token, secret: "ma_cle_secrete")
+    # payload = Authn::Token.decode(token, secret: "ma_cle_secrete")
     # puts payload.email
     # ```
     def self.decode(token : String, secret : String) : Payload
@@ -59,7 +59,7 @@ module KemalAuth
     # Génère un token JWT signé pour un utilisateur authentifié.
     #
     # ```
-    # token = KemalAuth::Token.generate(
+    # token = Authn::Token.generate(
     #   secret: "ma_cle_secrete",
     #   sub: "42",
     #   email: "admin@gaya.fr",
@@ -91,7 +91,7 @@ module KemalAuth
     # Ce token a une durée de vie plus longue (72h par défaut).
     #
     # ```
-    # token = KemalAuth::Token.generate_reservation_token(
+    # token = Authn::Token.generate_reservation_token(
     #   secret: "ma_cle_secrete",
     #   reservation_token: "abc123",
     #   expiry_hours: 72
@@ -117,7 +117,7 @@ module KemalAuth
     # Retourne true si le token est valide et non expiré.
     #
     # ```
-    # KemalAuth::Token.valid?(token, secret: "ma_cle_secrete") # => true ou false
+    # Authn::Token.valid?(token, secret: "ma_cle_secrete") # => true ou false
     # ```
     def self.valid?(token : String, secret : String) : Bool
       decode(token, secret)

@@ -4,12 +4,12 @@
 
 [source,crystal]
 ----
-require "kemal_auth"
+require "authn"
 
-hash = KemalAuth::Password.hash("MyStr0ng!Pass")
-KemalAuth::Password.verify("MyStr0ng!Pass", hash) # => true
+hash = Authn::Password.hash("MyStr0ng!Pass")
+Authn::Password.verify("MyStr0ng!Pass", hash) # => true
 
-errors = KemalAuth::Password.validate("weak")
+errors = Authn::Password.validate("weak")
 # => ["Le mot de passe doit contenir au moins 12 caractères", ...]
 ----
 
@@ -17,13 +17,13 @@ errors = KemalAuth::Password.validate("weak")
 
 [source,crystal]
 ----
-token = KemalAuth::Token.generate(
+token = Authn::Token.generate(
   secret: ENV["SESSION_SECRET"],
   sub: "1",
   email: "user@example.com",
   role: "admin"
 )
-payload = KemalAuth::Token.decode(token, ENV["SESSION_SECRET"])
+payload = Authn::Token.decode(token, ENV["SESSION_SECRET"])
 ----
 
 == SMTP Configuration
@@ -34,7 +34,7 @@ SMTP settings can be provided in three ways (in order of priority):
 
 [source,crystal]
 ----
-smtp = KemalAuth::SmtpConfig.new(
+smtp = Authn::SmtpConfig.new(
   host: "smtp.example.com",
   port: 587,
   username: "user@example.com",
@@ -49,7 +49,7 @@ smtp = KemalAuth::SmtpConfig.new(
 
 [source,crystal]
 ----
-smtp = KemalAuth::SmtpConfig.from_hash({
+smtp = Authn::SmtpConfig.from_hash({
   "smtp_host"         => "smtp.example.com",
   "smtp_port"         => "587",
   "smtp_username"     => "user@example.com",
@@ -79,8 +79,8 @@ smtp = KemalAuth::SmtpConfig.from_hash({
 
 [source,crystal]
 ----
-smtp = KemalAuth::SmtpConfig.new(host: "smtp.example.com", ...)
-result = KemalAuth::PasswordReset.send_reset_email(
+smtp = Authn::SmtpConfig.new(host: "smtp.example.com", ...)
+result = Authn::PasswordReset.send_reset_email(
   email: "user@example.com",
   reset_url: "https://myapp.com/reset-password",
   secret: ENV["SESSION_SECRET"],
@@ -92,13 +92,13 @@ result = KemalAuth::PasswordReset.send_reset_email(
 
 [source,crystal]
 ----
-errors = KemalAuth::UserManager.validate_user(
+errors = Authn::UserManager.validate_user(
   email: "new@example.com", nom: "Doe", prenom: "Jane", role: "admin"
 )
-KemalAuth::UserManager.send_invitation_email(
+Authn::UserManager.send_invitation_email(
   email: "new@example.com", prenom: "Jane",
   invitation_url: "https://myapp.com/set-password",
   secret: ENV["SESSION_SECRET"], smtp: smtp
 )
-temp_pwd = KemalAuth::UserManager.generate_temp_password
+temp_pwd = Authn::UserManager.generate_temp_password
 ----

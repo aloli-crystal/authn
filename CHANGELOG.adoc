@@ -3,6 +3,60 @@
 :toc-title: Versions
 :toclevels: 2
 
+== v0.2.0 — 2026-09-26
+
+=== Renamed from kemal-auth
+
+The name was wrong, and it was the only thing tying this shard to Kemal.
+Nothing in it ever depended on the framework: `shard.yml` never declared it,
+and `Session` exchanges `HTTP::Cookie` from the standard library rather than a
+framework's request context. The word "Kemal" appeared in three comments, two
+of them inside commented-out example code. The name simply stopped anyone
+reaching for it from a Marten or Lucky application.
+
+* Shard `kemal-auth` → `authn`, module `KemalAuth` → `Authn`.
+* `src/kemal_auth/` → `src/authn/`, `spec/kemal_auth_spec.cr` → `spec/authn_spec.cr`.
+* Dependents must update the dependency key, the URL and the version
+  constraint, and replace `KemalAuth::` with `Authn::` in their own code.
+
+=== Removed
+
+* `Password.validate`, `Password.valid?` and `Password::MIN_LENGTH` — the rules
+  moved to `aloli-crystal/password-policy`. They are a policy question: they
+  change with the regulator, and the ones here implemented the CNIL's 2017
+  recommendation, replaced in 2022 by entropy tiers. Keeping them here also
+  forced one hardcoded French wording on every consumer.
+* `UserManager.validate_user` loses its `password` parameter, for the same
+  reason. Validate the password with `PasswordPolicy::Policy#validate`
+  alongside it.
+
+=== Added
+
+* `Password.hash` accepts `policy:`, enforcing a `PasswordPolicy::Policy` and
+  raising `Password::PolicyError`, which carries the violations as values.
+* `Password::MAX_BYTESIZE` — the longest password BCrypt accepts, in bytes.
+
+=== Fixed
+
+* `Password.hash` no longer lets a password past what BCrypt accepts. The limit
+  is *71 bytes*, not the 72 usually quoted: Crystal's `Crypto::Bcrypt` appends a
+  NUL terminator and rejects past 72, so 72 bytes become 73. Bytes, not
+  characters — a 40-character accented passphrase is 80 bytes.
+* The Makefile ran a spec path that stopped existing when the spec file was
+  renamed in 0.1.1.
+* CI invoked `bin/ameba`, a binary ameba 1.7 no longer builds.
+
+=== Known remaining
+
+* `UserManager.validate_user` still returns hardcoded French sentences. It has
+  the flaw the password rules were extracted for; fixing it means a further
+  breaking change and is left for a later release.
+
+== v0.1.2 — 2026-04-29
+
+* `VERSION` is read from `shard.yml` at compile time, so the constant cannot
+  drift from the shard's declared version.
+
 == v0.1.1 — 2026-04-22
 
 * Add the *ameba* linter to the CI pipeline with a shared `.ameba.yml` config aligned with the Crystal ecosystem.

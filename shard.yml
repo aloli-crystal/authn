@@ -1,10 +1,9 @@
-name: kemal-auth
-version: 0.1.2
+name: authn
+version: 0.2.0
 description: |
-  Authentication library for Kemal web applications.
-  Provides password management (BCrypt with CNIL-compliant rules),
-  JWT tokens, session management (Kemal cookies), user invitations,
-  and password reset via configurable SMTP.
+  Authentication building blocks for Crystal, framework-agnostic: BCrypt
+  password hashing, JWT tokens, HTTP cookie sessions, user invitations and
+  password reset over SMTP. Password policy rules live in password-policy.
 
 authors:
   - Philippe Nénert <philippe@aloli.fr>
@@ -14,6 +13,10 @@ crystal: ">= 1.18.1"
 license: MIT
 
 dependencies:
+  # Les règles de mot de passe vivent ici, et nulle part ailleurs.
+  password-policy:
+    github: aloli-crystal/password-policy
+    version: "~> 0.1"
   bcrypt:
     github: jgaskins/bcrypt
   email:

@@ -1,6 +1,7 @@
-= Kemal Auth
+= Authn
 
-Authentication library for https://kemalcr.com/[Kemal] web applications in Crystal.
+Authentication building blocks for Crystal, tied to no web framework.
+Formerly `kemal-auth`.
 
 == Modules
 
@@ -8,22 +9,22 @@ Authentication library for https://kemalcr.com/[Kemal] web applications in Cryst
 |===
 | Module | Description
 
-| `KemalAuth::Password`
+| `Authn::Password`
 | BCrypt password hashing and validation with CNIL-compliant rules (12+ chars, uppercase, lowercase, digit, special char)
 
-| `KemalAuth::Token`
+| `Authn::Token`
 | JWT token generation and verification
 
-| `KemalAuth::Session`
-| Session management via HTTP cookies (Kemal)
+| `Authn::Session`
+| Session management via HTTP cookies, framework-agnostic
 
-| `KemalAuth::SmtpConfig`
+| `Authn::SmtpConfig`
 | Configurable SMTP server settings
 
-| `KemalAuth::PasswordReset`
+| `Authn::PasswordReset`
 | Password recovery via email
 
-| `KemalAuth::UserManager`
+| `Authn::UserManager`
 | User management and invitations
 |===
 
